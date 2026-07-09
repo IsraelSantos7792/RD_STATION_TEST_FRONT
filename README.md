@@ -7,6 +7,36 @@ Interface web em **Next.js** para gerenciar um carrinho de compras. Consome a AP
 | Frontend  | Next.js 16   | `3000`       |
 | Backend   | Rails 7.1    | `5050`       |
 
+## Telas da aplicação
+
+### Login (`/login`)
+
+![Tela de login](public/login_image.png)
+
+Tela de entrada inspirada no visual da RD Station. O layout é dividido em duas colunas:
+
+- **Esquerda:** banner promocional do webinar (link externo para a RD Station).
+- **Direita:** formulário de login com e-mail, senha, opção de lembrar dispositivo e seletor de idioma (PT, EN, ES).
+
+A autenticação é **mock local** (não chama a API Rails). Use as credenciais de teste exibidas na própria tela:
+
+| Campo   | Valor      |
+|---------|------------|
+| E-mail  | `admin`    |
+| Senha   | `admin123` |
+
+### Produtos e carrinho (`/`)
+
+![Tela de produtos e carrinho](public/front_products.png)
+
+Após o login, a home exibe o catálogo e o carrinho da sessão atual:
+
+- **Produtos (esquerda):** lista vinda do endpoint `GET /products`. Cada card mostra nome, preço e botão **Adicionar**, que cria ou atualiza o carrinho via `POST /cart`.
+- **Carrinho (direita):** resumo da sessão (`GET /cart`), com ID do carrinho, total, quantidade por item, botão **+1** (`POST /cart/add_item`) e **Remover** (`DELETE /cart/:product_id`).
+- **Header:** título da aplicação, seletor de idioma e botão **Sair** (limpa a sessão local do frontend).
+
+O carrinho é mantido no backend por **cookie de sessão** — as requisições usam `credentials: "include"` para preservar o mesmo carrinho entre recarregamentos.
+
 ## Pré-requisitos
 
 ### Frontend
@@ -65,14 +95,7 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:5050
 
 ### 3. Login
 
-O login é apenas no frontend (mock local):
-
-| Campo    | Valor       |
-|----------|-------------|
-| Usuário  | `admin`     |
-| Senha    | `admin123`  |
-
-Após autenticar, a home lista produtos e o carrinho da sessão atual.
+Acesse [http://localhost:3000/login](http://localhost:3000/login) e entre com `admin` / `admin123`. Veja a seção [Telas da aplicação](#telas-da-aplicação) para um preview visual.
 
 ## Scripts do frontend
 
