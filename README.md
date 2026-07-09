@@ -1,37 +1,125 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Manager Cart — RD Station (frontend)
 
-## Getting Started
+Interface web em **Next.js** para gerenciar um carrinho de compras. Consome a API REST em **Ruby on Rails**, que identifica o carrinho por sessão (cookies).
 
-First, run the development server:
+| Serviço   | Stack        | Porta padrão |
+|-----------|--------------|--------------|
+| Frontend  | Next.js 16   | `3000`       |
+| Backend   | Rails 7.1    | `5050`       |
+
+## Pré-requisitos
+
+### Frontend
+
+- Node.js 20+
+- Yarn
+
+### Backend (Rails)
+
+- Ruby **3.3.1**
+- Rails **7.1.3.2**
+- PostgreSQL **16**
+- Redis **7.0.15**
+
+## Como rodar
+
+Siga a ordem abaixo: o frontend depende da API no ar.
+
+### 1. Backend (Rails na porta 5050)
+
+No repositório da API Rails:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+bundle install
+bin/rails db:create db:migrate db:seed
+PORT=5050 bundle exec rails server
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+A API ficará disponível em [http://localhost:5050](http://localhost:5050).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Em outro terminal, suba o Sidekiq (jobs de carrinhos abandonados):
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+bundle exec sidekiq
+```
 
-## Learn More
+Garanta que PostgreSQL e Redis estejam rodando localmente (ou via Docker, conforme o README do backend).
 
-To learn more about Next.js, take a look at the following resources:
+### 2. Frontend (Next.js)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Neste repositório:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+yarn install
+cp .env.local.example .env.local
+yarn dev
+```
 
-## Deploy on Vercel
+Abra [http://localhost:3000](http://localhost:3000).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+O arquivo `.env.local` deve apontar para o backend:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# RD_STATION_TEST_FRONT
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5050
+```
+
+### 3. Login
+
+O login é apenas no frontend (mock local):
+
+| Campo    | Valor       |
+|----------|-------------|
+| Usuário  | `admin`     |
+| Senha    | `admin123`  |
+
+Após autenticar, a home lista produtos e o carrinho da sessão atual.
+
+## Scripts do frontend
+
+| Comando       | Descrição                   |
+|---------------|-----------------------------|
+| `yarn dev`    | Servidor de desenvolvimento |
+| `yarn build`  | Build de produção           |
+| `yarn start`  | Servidor de produção        |
+| `yarn lint`   | ESLint                      |
+
+## Endpoints usados pelo frontend
+
+| Método   | Rota              | Uso                          |
+|----------|-------------------|------------------------------|
+| `GET`    | `/products`       | Listar produtos              |
+| `GET`    | `/cart`           | Carrinho da sessão           |
+| `POST`   | `/cart`           | Adicionar produto ao carrinho |
+| `POST`   | `/cart/add_item`  | Incrementar quantidade       |
+| `DELETE` | `/cart/:product_id` | Remover item do carrinho |
+
+As requisições enviam `credentials: "include"` para manter o cookie de sessão do Rails.
+
+## CORS
+
+O backend precisa aceitar a origem do frontend (`http://localhost:3000`) com credenciais habilitadas. Se aparecer erro de CORS no navegador, confira o `config/initializers/cors.rb` da API Rails.
+
+Se rodar o frontend em outra porta (ex.: `3001`), adicione essa origem no CORS do backend e reinicie o servidor Rails.
+
+## Estrutura do projeto
+
+```
+app/
+  page.tsx          # Home — produtos e carrinho
+  login/page.tsx    # Tela de login
+lib/
+  api.ts            # Cliente HTTP da API Rails
+  auth.ts           # Autenticação local (localStorage)
+  i18n.ts           # Traduções (pt, en, es)
+components/
+  LanguageMenu.tsx  # Seletor de idioma
+```
+
+## Produção
+
+```bash
+yarn build
+yarn start
+```
+
+Defina `NEXT_PUBLIC_API_BASE_URL` com a URL pública da API Rails no ambiente de deploy.
